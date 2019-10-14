@@ -432,4 +432,3 @@ while True:
 
 # Close users visited file??
 usersVisitedFp.close()
-
