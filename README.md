@@ -1,6 +1,8 @@
 # qtcreeper
 
-**Requires**
+This is going to be a NodeJS port of the original qtcreeper python script.
+
+<!-- **Requires**
 * Python 2.7, https://www.python.org/download/releases/2.7/
 * python-requests module, which is included for convenience, but deleting it and installing it via Python's pip install tool might be better if you know how
 
@@ -12,4 +14,4 @@
 
 **Misc notes**
 * On running qtcreeper you will be prompted to specify your username/password and the type of qts to search for, this will be saved across launches
-* Settings data (config and list of already visited qts) is stored in a .qtcreeper folder in your home directory (something like C:/Users/Username/.qtcreeper/ on windows)
+* Settings data (config and list of already visited qts) is stored in a .qtcreeper folder in your home directory (something like C:/Users/Username/.qtcreeper/ on windows) -->
