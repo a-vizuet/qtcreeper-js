@@ -4,7 +4,8 @@ const chalk = require('chalk');
 const rdln = require('readline')
   .createInterface({ input: process.stdin, output: process.stdout });
 
-main();
+// main();
+creep();
 
 function main() {
   // load already saved info and set it
@@ -64,9 +65,17 @@ async function creep() {
 
   let i = await p.goto('https://www.interpals.net/app/auth/login');
 
+  /* Manual log in */
+  await p.focus('#topLoginEmail');
+  await p.keyboard.type('email');
+  await p.focus('#topLoginPassword');
+  await p.keyboard.type('pswd');
+  await p.click('input[value="Sign In"]');
+
+  i = await p.goto('https://www.interpals.net');
   let html = await i.text();
 
-  if (html.includes('You are currently logged')) {
+  if (html.includes('My Profile')) {
     console.log(chalk.bold.green('Already logged.'));
   } else {
     console.log(chalk.bold.red('Error trying to log in.'));
@@ -90,25 +99,19 @@ async function creep() {
     process.exit(0);
   }
 
+  for (let i = 0; i < users.length; i++) {
+    await p.goto(`https://www.interpals.net/${users[i]}`);
+    console.log(`User ${users[i]} has been visited`);
+  }
+
 }
 
 function handleRequest(r, ...args) {
   const url = r.url();
 
-  if (url === 'https://www.interpals.net/app/auth/login') {
-    console.log('login');
-    const data = {
-      'method': 'POST',
-      'postData': 'username=user@name.com&password=pwd'
-    };
-
-    return r.continue(data);
-  }
-
-  else if (url === 'https://www.interpals.net/app/search') {
+  if (url === 'https://www.interpals.net/app/search?sex=female&continents=EU') {
     // build url
     console.log('search');
-
 
   }
 
@@ -117,10 +120,10 @@ function handleRequest(r, ...args) {
 }
 
 function handleUsers(html) {
-  const users = html.match(/[/]+[\w]+[?]+utm_medium=pp-userlink/g);
-
+  const users = html.match(/Report ([a-zA-Z0-9\-_]+) to moderators/g);
+  console.log(users);
   return users.length > 0 ?
-    users.map(u => u.split('?utm_medium=pp-userlink')[0]) : [];
+    users.map(u => u.slice(7, u.length - 14)) : [];
 }
 
 function buildSearch() { }
