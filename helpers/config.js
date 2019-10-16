@@ -1,3 +1,4 @@
 exports.config = {
-  csrf_token: null
+  username: null,
+  password: null,
 };
