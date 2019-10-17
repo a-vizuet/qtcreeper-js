@@ -97,5 +97,6 @@ public/
 
 # Qtcreeper
 config.json
+users_visited.txt
 
 # End of https://www.gitignore.io/api/node

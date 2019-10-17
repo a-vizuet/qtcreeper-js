@@ -3,7 +3,7 @@ const fs = require('fs');
 const puppeteer = require('puppeteer');
 const chalk = require('chalk');
 
-let config = require('./helpers/config').CONFIG
+let config = require('./helpers/config').CONFIG;
 let visitedUsers = [];
 
 const rdln = require('readline')
@@ -26,13 +26,12 @@ async function main() {
     5 - set keywords (${config.keywords.length > 0 ? config.keywords.join(',') : 'None'})
     6 - set creeper speed (not implemented yet)
     7 - set maximum qts to creep (not implemented yet)
-    8 - clear users already visited file
+    8 - clear users already visited file (${visitedUsers.length} users visited)
     9 - run creeper!\n> `, triggerOption);
 }
 
 function loadFiles() {
-  return new Promise((res, rej) => {
-    // Read config file
+  return new Promise(res => {
     fs.readFile('config.json', (err, data) => {
       if (err) {
         fs.writeFile('config.json', JSON.stringify(config), err => {
@@ -46,9 +45,22 @@ function loadFiles() {
       }
     });
 
-    // Read visited users file
-
-    res(true);
+    fs.readFile('users_visited.txt', (err, data) => {
+      if (err) {
+        fs.writeFile('users_visited.txt', '', err => {
+          if (err) {
+            console.log(chalk.bold.red(err));
+            process.exit(1);
+          } else {
+            visitedUsers = [];
+            res();
+          }
+        });
+      } else {
+        visitedUsers = data.toString('utf-8').length > 0 ? data.toString('utf-8').split('\r\n') : [];
+        res();
+      }
+    });
   });
 }
 
