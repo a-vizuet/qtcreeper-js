@@ -1,26 +1,60 @@
+const fs = require('fs');
+
 const puppeteer = require('puppeteer');
 const chalk = require('chalk');
+
+let config = require('./helpers/config').CONFIG
+let visitedUsers = [];
 
 const rdln = require('readline')
   .createInterface({ input: process.stdin, output: process.stdout });
 
-// main();
-creep();
+main();
+// creep();
 
-function main() {
-  // load already saved info and set it
+async function main() {
+  console.log(chalk.bold('Loading files...'));
+  await loadFiles();
+  console.log(chalk.bold.green('Config files loaded!'));
+
   rdln.question(chalk`
   Please select an option and press enter:
-    1 - set username and password
-    2 - set gender and age range
-    3 - set continents
-    4 - set countries
-    5 - set keywords
-    6 - set creeper speed
-    7 - set maximum qts to creep
+    1 - set username and password (${!config.password && !config.username ? 'NOT SET!' : config.username})
+    2 - set gender and age range (${config.sex.join(' and ')}, ${config.age1} to ${config.age2})
+    3 - set continents (${config.continents})
+    4 - set countries (${config.countries.length > 0 ? config.countries.join(',') : 'All'})
+    5 - set keywords (${config.keywords.length > 0 ? config.keywords.join(',') : 'None'})
+    6 - set creeper speed (not implemented yet)
+    7 - set maximum qts to creep (not implemented yet)
     8 - clear users already visited file
     9 - run creeper!\n> `, triggerOption);
 }
+
+function loadFiles() {
+  return new Promise((res, rej) => {
+    // Read config file
+    fs.readFile('config.json', (err, data) => {
+      if (err) {
+        fs.writeFile('config.json', JSON.stringify(config), err => {
+          if (err) {
+            console.log(chalk.bold.red(err));
+            process.exit(1);
+          }
+        });
+      } else {
+        config = JSON.parse(data.toString('utf-8'));
+      }
+    });
+
+    // Read visited users file
+
+    res(true);
+  });
+}
+
+function saveConfigFile() {}
+
+function saveUsersFile() {}
 
 function repeatQuestion() {
   rdln.question(chalk`> `, triggerOption);
@@ -55,28 +89,28 @@ function triggerOption(opt) {
 
 async function creep() {
   console.log(chalk.bold('Launching chromium instance...'));
+  
   const b = await puppeteer.launch();
-  console.log(chalk.bold.green('Now, to interpals!'));
-
   const p = await b.newPage();
 
   p.setRequestInterception(true);
   p.on('request', handleRequest);
 
+  console.log(chalk.bold.bold('Attempting to log in...'));
   let i = await p.goto('https://www.interpals.net/app/auth/login');
 
   /* Manual log in */
   await p.focus('#topLoginEmail');
-  await p.keyboard.type('email');
+  await p.keyboard.type('');
   await p.focus('#topLoginPassword');
-  await p.keyboard.type('pswd');
+  await p.keyboard.type('');
   await p.click('input[value="Sign In"]');
 
   i = await p.goto('https://www.interpals.net');
   let html = await i.text();
 
   if (html.includes('My Profile')) {
-    console.log(chalk.bold.green('Already logged.'));
+    console.log(chalk.bold.green('Logged in!'));
   } else {
     console.log(chalk.bold.red('Error trying to log in.'));
     await b.close();
