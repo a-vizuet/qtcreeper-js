@@ -9,13 +9,19 @@ let visitedUsers = [];
 const rdln = require('readline')
   .createInterface({ input: process.stdin, output: process.stdout });
 
+let firstTime = true;
+
 main();
-// creep();
 
 async function main() {
-  console.log(chalk.bold('Loading files...'));
-  await loadFiles();
-  console.log(chalk.bold.green('Config files loaded!'));
+  if (firstTime) {
+    console.log(chalk.bold('Loading files...'));
+    await loadFiles();
+    console.log(chalk.bold.green('Config files loaded!'));
+    firstTime = false;
+  }
+
+  console.log(config);
 
   rdln.question(chalk`
   Please select an option and press enter:
@@ -34,12 +40,7 @@ function loadFiles() {
   return new Promise(res => {
     fs.readFile('config.json', (err, data) => {
       if (err) {
-        fs.writeFile('config.json', JSON.stringify(config), err => {
-          if (err) {
-            console.log(chalk.bold.red(err));
-            process.exit(1);
-          }
-        });
+        saveConfigFile();
       } else {
         config = JSON.parse(data.toString('utf-8'));
       }
@@ -47,15 +48,8 @@ function loadFiles() {
 
     fs.readFile('users_visited.txt', (err, data) => {
       if (err) {
-        fs.writeFile('users_visited.txt', '', err => {
-          if (err) {
-            console.log(chalk.bold.red(err));
-            process.exit(1);
-          } else {
-            visitedUsers = [];
-            res();
-          }
-        });
+        saveUsersFile();
+        res();
       } else {
         visitedUsers = data.toString('utf-8').length > 0 ? data.toString('utf-8').split('\r\n') : [];
         res();
@@ -64,9 +58,33 @@ function loadFiles() {
   });
 }
 
-function saveConfigFile() {}
+function saveConfigFile() {
+  console.log(config);
+  fs.writeFile('config.json', JSON.stringify(config), err => {
+    if (err) {
+      console.log(chalk.bold.red(err));
+      process.exit(1);
+    }
+  });
+}
 
-function saveUsersFile() {}
+function saveUsersFile() {
+  fs.writeFile('users_visited.txt', '', err => {
+    if (err) {
+      console.log(chalk.bold.red(err));
+      process.exit(1);
+    } else {
+      visitedUsers = [];
+    }
+  });
+}
+
+function setUsernameAndPassword(u, p) {
+  config.username = u;
+  config.password = p;
+
+  saveConfigFile();
+}
 
 function repeatQuestion() {
   rdln.question(chalk`> `, triggerOption);
@@ -75,6 +93,20 @@ function repeatQuestion() {
 function triggerOption(opt) {
   switch (Number(opt)) {
     case 1:
+      let username;
+      let password;
+      rdln.question(chalk('Enter username or email address:\n> '), inp => {
+        username = inp;
+        
+        rdln.question(chalk('Enter password:\n> '), ans => {
+          password = ans;
+
+          setUsernameAndPassword(username, password);
+
+          main();
+        });
+      
+      });
       break;
     case 2:
       break;
@@ -91,6 +123,7 @@ function triggerOption(opt) {
     case 8:
       break;
     case 9:
+      config.username ? creep() : console.log('Set username and password first!');
       break;
     default:
       console.log('Not a valid option');
@@ -113,9 +146,9 @@ async function creep() {
 
   /* Manual log in */
   await p.focus('#topLoginEmail');
-  await p.keyboard.type('');
+  await p.keyboard.type(config.username);
   await p.focus('#topLoginPassword');
-  await p.keyboard.type('');
+  await p.keyboard.type(config.password);
   await p.click('input[value="Sign In"]');
 
   i = await p.goto('https://www.interpals.net');
