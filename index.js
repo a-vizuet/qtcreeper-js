@@ -4,6 +4,7 @@ const puppeteer = require('puppeteer');
 const chalk = require('chalk');
 
 let config = require('./helpers/config').CONFIG;
+const I_SEARCH = require('./helpers/constants').INTERPALS_SEARCH;
 let visitedUsers = [];
 
 const rdln = require('readline')
@@ -21,7 +22,7 @@ async function main() {
     firstTime = false;
   }
 
-  console.log(config);
+  console.log(visitedUsers);
 
   rdln.question(chalk`
   Please select an option and press enter:
@@ -36,7 +37,7 @@ async function main() {
     9 - run creeper!\n> `, triggerOption);
 }
 
-function loadFiles() {
+async function loadFiles() {
   return new Promise(res => {
     fs.readFile('config.json', (err, data) => {
       if (err) {
@@ -46,12 +47,12 @@ function loadFiles() {
       }
     });
 
-    fs.readFile('users_visited.txt', (err, data) => {
+    fs.readFile('users_visited.txt', async (err, data) => {
       if (err) {
-        saveUsersFile();
+        await saveUsersFile();
         res();
       } else {
-        visitedUsers = data.toString('utf-8').length > 0 ? data.toString('utf-8').split('\r\n') : [];
+        visitedUsers = data.toString('utf-8').length > 0 ? data.toString('utf-8').split('\n') : [];
         res();
       }
     });
@@ -69,19 +70,20 @@ function saveConfigFile() {
 }
 
 function saveUsersFile() {
-  fs.writeFile('users_visited.txt', '', err => {
-    if (err) {
-      console.log(chalk.bold.red(err));
-      process.exit(1);
-    } else {
-      visitedUsers = [];
-    }
+  return new Promise(res => {
+    fs.writeFile('users_visited.txt', visitedUsers.toString().replace(/,/g, '\n'), err => {
+      if (err) {
+        console.log(chalk.bold.red(err));
+        process.exit(1);
+      } else {
+        res();
+      }
+    });
   });
 }
 
-function setUsernameAndPassword(u, p) {
-  config.username = u;
-  config.password = p;
+function setConfig(configs, data) {
+  configs.forEach((c, i) => config[c] = data[i])
 
   saveConfigFile();
 }
@@ -101,7 +103,7 @@ function triggerOption(opt) {
         rdln.question(chalk('Enter password:\n> '), ans => {
           password = ans;
 
-          setUsernameAndPassword(username, password);
+          setConfig(['username', 'password'], [username, password]);
 
           main();
         });
@@ -109,6 +111,34 @@ function triggerOption(opt) {
       });
       break;
     case 2:
+      let genders;
+      let minAge;
+      let maxAge;
+      rdln.question(chalk('What genders to crawl? 1 = female, 2 = male, 3 = both\n> '), genderInp => {
+        switch(Number(genderInp)) {
+          case 1:
+            genders = ['female'];
+            break;
+          case 2:
+            genders = ['male'];
+            break;
+          default:
+            genders = ['female', 'male'];
+            break;
+        } 
+
+        rdln.question(chalk('Minimum age?\n> '), minAgeInp => {
+          minAge = minAgeInp;
+
+          rdln.question(chalk('Maximum age?\n> '), maxAgeInput => {
+            maxAge = maxAgeInput;
+
+            setConfig(['sex', 'age1', 'age2'], [genders, minAge, maxAge]);
+
+            main();
+          });
+        });
+      }); 
       break;
     case 3:
       break;
@@ -123,7 +153,12 @@ function triggerOption(opt) {
     case 8:
       break;
     case 9:
-      config.username ? creep() : console.log('Set username and password first!');
+      if (config.username) {
+        creep();
+      } else {
+        console.log('Set username and password first!\n');
+        main();
+      }
       break;
     default:
       console.log('Not a valid option');
@@ -137,9 +172,6 @@ async function creep() {
   
   const b = await puppeteer.launch();
   const p = await b.newPage();
-
-  p.setRequestInterception(true);
-  p.on('request', handleRequest);
 
   console.log(chalk.bold.bold('Attempting to log in...'));
   let i = await p.goto('https://www.interpals.net/app/auth/login');
@@ -164,37 +196,43 @@ async function creep() {
 
   console.log(chalk.bold('Searching for users...\n'));
 
-  i = await p.goto('https://www.interpals.net/app/search');
+  let finishedUsers = false;
+  let page = 0;
+  let online = true;
 
-  html = await i.text();
+  do {
+    i = await buildSearch(p, page, online);
+    html = await i.text();
+    const users = handleUsers(html);
 
-  const users = handleUsers(html);
+    if (users.length > 0) {
+      console.log(chalk.bold(`Found ${users.length} users. Starting to creep.\n`));
+    } else {
+      console.log(chalk.bold.red(`Found 0 users.`));
+      await b.close();
+      process.exit(0);
+    }
 
-  if (users.length > 0) {
-    console.log(chalk.bold(`Found ${users.length} users. Starting to creep.\n`));
-  } else {
-    console.log(chalk.bold.red(`Found 0 users.`));
-    await b.close();
-    process.exit(0);
-  }
+    for (let i = 0; i < users.length; i++) {
+      if (!visitedUsers.includes(users[i])) {
+        try {
+          await p.goto(`https://www.interpals.net/${users[i]}`);
+          visitedUsers.push(users[i]);
+          console.log(`User ${users[i]} has been visited`);
+          await saveUsersFile();
+        } catch (error) {
+          await p.goto(`https://www.interpals.net/${users[i]}`);
+          visitedUsers.push(users[i]);
+          console.log(`User ${users[i]} has been visited`);
+          await saveUsersFile();
+        }
+      } else {
+        console.log(`User ${users[i]} already visited. Skipping...`);
+      }
+    }
 
-  for (let i = 0; i < users.length; i++) {
-    await p.goto(`https://www.interpals.net/${users[i]}`);
-    console.log(`User ${users[i]} has been visited`);
-  }
-
-}
-
-function handleRequest(r, ...args) {
-  const url = r.url();
-
-  if (url === 'https://www.interpals.net/app/search?sex=female&continents=EU') {
-    // build url
-    console.log('search');
-
-  }
-
-  return r.continue();
+    page++;
+  } while (!finishedUsers);
 
 }
 
@@ -205,4 +243,19 @@ function handleUsers(html) {
     users.map(u => u.slice(7, u.length - 14)) : [];
 }
 
-function buildSearch() { }
+function buildSearch(p_instance, page, online) {
+  let searchURL = I_SEARCH;
+
+  console.log(page);
+
+  if (online) {
+    searchURL += `offset=${page * 20}&online=1&age1=${config.age1}&age2=${config.age2}`;
+
+    for (const i in config.sex) {
+      searchURL += `&sex=${config.sex[i]}`;
+    }
+  }
+
+  console.log(searchURL);
+  return p_instance.goto(searchURL);
+}

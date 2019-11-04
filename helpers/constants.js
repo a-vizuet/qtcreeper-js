@@ -24,3 +24,5 @@ exports.SEX = ['male', 'female'];
 exports.COUNTRIES = [];
 
 exports.KEYWORDS = [];
+
+exports.INTERPALS_SEARCH = 'https://www.interpals.net/app/search?';
