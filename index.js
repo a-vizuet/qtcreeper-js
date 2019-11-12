@@ -5,6 +5,7 @@ const chalk = require('chalk');
 
 let config = require('./helpers/config').CONFIG;
 const I_SEARCH = require('./helpers/constants').INTERPALS_SEARCH;
+const DEF_CONTINENTS = require('./helpers/constants').DEF_CONTINENTS;
 let visitedUsers = [];
 
 const rdln = require('readline')
@@ -139,14 +140,42 @@ function triggerOption(opt) {
       }); 
       break;
     case 3:
+      rdln.question(chalk(`Enter a comma separated list of any of these continent codes, or nothing for all continents: ${DEF_CONTINENTS.join(', ')}\n> `), continents => {
+        continents = continents.trim().length === 0 ? 
+          DEF_CONTINENTS : continents.split(',').map(continent => continent.trim().toUpperCase());
+
+        setConfig(['continents'], [continents]);
+
+        main();
+      });
       break;
     case 4:
+      rdln.question(chalk(`Enter a comma separated list of two letter country codes, or nothing for all countries:\n> `), countries => {
+        countries = countries.trim().length === 0 ?
+          [] : countries.split(',').map(country => country.trim().toUpperCase());
+
+        setConfig(['countries'], [countries]);
+
+        main();
+      });
       break;
     case 5:
+      rdln.question(chalk(`Enter a comma separated list of keywords, or nothing to clear:\n> `), keywords => {
+        keywords = keywords.trim().length === 0 ?
+          [] : keywords.split(',').map(keyword => keyword.trim().toUpperCase());
+
+        setConfig(['keywords'], [keywords]);
+
+        main();
+      });
       break;
     case 6:
+      console.log(chalk('Not implemented yet!!!'));
+      main();
       break;
     case 7:
+      console.log(chalk('Not implemented yet!!!'));
+      main();
       break;
     case 8:
       break;
