@@ -21,9 +21,7 @@ async function main() {
     console.log(chalk.bold.green('Config files loaded!'));
     firstTime = false;
   }
-
-  console.log(visitedUsers);
-
+  
   rdln.question(chalk`
   Please select an option and press enter:
     1 - set username and password (${!config.password && !config.username ? 'NOT SET!' : config.username})
@@ -216,15 +214,9 @@ async function creep() {
     for (let i = 0; i < users.length; i++) {
       if (!visitedUsers.includes(users[i])) {
         try {
-          await p.goto(`https://www.interpals.net/${users[i]}`);
-          visitedUsers.push(users[i]);
-          console.log(`User ${users[i]} has been visited`);
-          await saveUsersFile();
+          await visitUser(p, users[i]);
         } catch (error) {
-          await p.goto(`https://www.interpals.net/${users[i]}`);
-          visitedUsers.push(users[i]);
-          console.log(`User ${users[i]} has been visited`);
-          await saveUsersFile();
+          await visitUser(p, users[i]);
         }
       } else {
         console.log(`User ${users[i]} already visited. Skipping...`);
@@ -238,7 +230,6 @@ async function creep() {
 
 function handleUsers(html) {
   const users = html.match(/Report ([a-zA-Z0-9\-_]+) to moderators/g);
-  console.log(users);
   return users.length > 0 ?
     users.map(u => u.slice(7, u.length - 14)) : [];
 }
@@ -258,4 +249,11 @@ function buildSearch(p_instance, page, online) {
 
   console.log(searchURL);
   return p_instance.goto(searchURL);
+}
+
+async function visitUser(p, user) {
+  await p.goto(`https://www.interpals.net/${user}`);
+  visitedUsers.push(user);
+  console.log(`User ${user} has been visited`);
+  await saveUsersFile();
 }
