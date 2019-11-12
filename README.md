@@ -10,6 +10,12 @@ How does it work?
 
 This work with a Chromium instance installed by puppeteer, I choosed to use it for two reasons: I wanted to test it and learn a bit about it and I never made work those request libraries with cached cookies and stuff.
 
+I save two files: one for the search configuration and the other one for the users you've already visited.
+
+I load both files, then the menu is prompt and you can configure almost all the stuff.
+
+At the end, you can starting creeping people and probably you can find a qt that will love you.
+
 The truth
 ----
 Even though it works... ok. There's some disadvantages regarding the original py script.
