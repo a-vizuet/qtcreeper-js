@@ -91,6 +91,19 @@ function repeatQuestion() {
   rdln.question(chalk`> `, triggerOption);
 }
 
+async function clearVisitedUsersFile() {
+  try {
+    const visitedUsersCached = visitedUsers;
+    visitedUsers = [];
+    await saveUsersFile();
+    await loadFiles();
+
+    console.log(chalk.bold.green('File cleared!'));
+
+  } catch (error) {}
+
+}
+
 function triggerOption(opt) {
   switch (Number(opt)) {
     case 1:
@@ -178,6 +191,7 @@ function triggerOption(opt) {
       main();
       break;
     case 8:
+      clearVisitedUsersFile().then(() => main());
       break;
     case 9:
       if (config.username) {
