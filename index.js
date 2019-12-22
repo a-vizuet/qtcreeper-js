@@ -280,13 +280,16 @@ function handleUsers(html) {
 function buildSearch(p_instance, page, online) {
   let searchURL = I_SEARCH;
 
-  console.log(page);
-
   if (online) {
     searchURL += `offset=${page * 20}&online=1&age1=${config.age1}&age2=${config.age2}`;
 
     for (const i in config.sex) {
       searchURL += `&sex=${config.sex[i]}`;
+    }
+  
+    for (const i in config.continents) {
+      console.log(i);
+      searchURL += `&continents[]=${config.continents[i]}`;
     }
   }
 
