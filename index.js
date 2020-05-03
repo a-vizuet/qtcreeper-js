@@ -273,7 +273,7 @@ async function creep() {
 
 function handleUsers(html) {
   const users = html.match(/Report ([a-zA-Z0-9\-_]+) to moderators/g);
-  return users.length > 0 ?
+  return users.length && users.length > 0 ?
     users.map(u => u.slice(7, u.length - 14)) : [];
 }
 
@@ -288,7 +288,6 @@ function buildSearch(p_instance, page, online) {
     }
   
     for (const i in config.continents) {
-      console.log(i);
       searchURL += `&continents[]=${config.continents[i]}`;
     }
   }
